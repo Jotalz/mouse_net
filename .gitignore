@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+data.txt
+mouse_net.pth
+models/
 # C extensions
 *.so
 
