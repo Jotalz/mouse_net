@@ -95,8 +95,6 @@ class Game_settings:
         target.y = int(target.y * scale_y)
         target.w = min(target.w, self.screen_width)
         target.h = min(target.h, self.screen_height)
-        target.prev_x = int(target.prev_x * scale_x)
-        target.prev_y = int(target.prev_y * scale_y)
 
 
 class Target:
@@ -110,8 +108,6 @@ class Target:
         self.h = h
         self.dx = dx
         self.dy = dy
-        self.prev_x = 0
-        self.prev_y = 0
 
     def move(self):
         self.x += self.dx
@@ -164,23 +160,6 @@ class Target:
     def get_direction_degrees(self):
         return math.degrees(self.get_direction())
 
-    def predict_target_position(self, target_x, target_y, target_w, target_h, game_settings):
-        velocity_x = target_x - self.prev_x
-        velocity_y = target_y - self.prev_y
-
-        predicted_x = target_x + velocity_x
-        predicted_y = target_y + velocity_y
-
-        predicted_x = max(target_w // 2, min(predicted_x, game_settings.screen_width - target_w // 2))
-        predicted_y = max(target_h // 2, min(predicted_y, game_settings.screen_height - target_h // 2))
-
-        self.prev_x = target_x
-        self.prev_y = target_y
-
-        mouse_move_x, mouse_move_y = self.adjust_mouse_movement(predicted_x, predicted_y, game_settings)
-
-        return mouse_move_x, mouse_move_y
-
     def adjust_mouse_movement(self, target_x, target_y, game_settings):
         offset_x = target_x - game_settings.screen_x_center
         offset_y = target_y - game_settings.screen_y_center
@@ -219,8 +198,7 @@ class Visualisation(threading.Thread):
                 break
 
             if Option_gen_visualise_draw_line:
-                x, y = target.predict_target_position(target_x=target.x, target_y=target.y, target_w=target.w,
-                                                      target_h=target.h, game_settings=game_settings)
+                x, y = target.adjust_mouse_movement(target_x=target.x, target_y=target.y, game_settings=game_settings)
                 cv2.line(image, (int(game_settings.screen_x_center), int(game_settings.screen_y_center)),
                          (int(data.x + x), int(data.y + y)), (0, 255, 255), 2)
 
@@ -382,8 +360,7 @@ def gen_data():
         if Option_gen_visualise:
             vision.queue.put(target)
 
-        x, y = target.predict_target_position(target_x=target.x, target_y=target.y, target_w=target.w,
-                                              target_h=target.h, game_settings=game_settings)
+        x, y = target.adjust_mouse_movement(target_x=target.x, target_y=target.y, game_settings=game_settings)
 
         data.add_target_data((game_settings.screen_width,
                               game_settings.screen_height,
@@ -428,13 +405,13 @@ if __name__ == "__main__":
 
     # Train
     Option_train = False if train in ["0", "n", "no", "N", "NO"] else True
-    Option_train_epochs = 10
+    Option_train_epochs = 50
     Option_train_batch_size = 2048 * 4  # I'm too lazy to type 4 digits, so I just multiply
-    Option_save_every_N_epoch = 10
+    Option_save_every_N_epoch = 20
 
     # Generation settings
     Option_Generation = False if generate in ["0", "n", "no", "N", "NO"] else True
-    Option_gen_time = 160
+    Option_gen_time = 2000
 
     Option_gen_visualise = False if vision in ["0", "n", "no", "N", "NO"] else True
     Option_gen_visualise_draw_line = True
@@ -444,18 +421,18 @@ if __name__ == "__main__":
     Option_gen_speed_y = [-1, 1]
 
     # Game settings - random options
-    Option_random_screen_resolution = False
-    Option_random_screen_resolution_width = [400, 580]
-    Option_random_screen_resolution_height = [300, 420]
+    Option_random_screen_resolution = True
+    Option_random_screen_resolution_width = [150, 600]
+    Option_random_screen_resolution_height = [150, 600]
 
-    Option_random_fov = False
-    Option_random_fov_x = [80, 90]
-    Option_random_fov_y = [55, 70]
+    Option_random_fov = True
+    Option_random_fov_x = [70, 110]
+    Option_random_fov_y = [40, 70]
 
-    Option_random_mouse_dpi = False
+    Option_random_mouse_dpi = True
     Option_random_mouse_dpi_min_max = [1000, 3000]
 
-    Option_random_mouse_sensitivity = False
+    Option_random_mouse_sensitivity = True
     Option_random_mouse_sensitivity_min_max = [1, 3]
 
     # Testing model
